@@ -54,7 +54,7 @@ export default function PlatePreview({ doc, result, colourBy, selectedWell, onWe
       undefined
     )
     const nums = vals.filter((v): v is number => v !== undefined)
-    if (nums.length === 0) return wells.map(() => 0.5)
+    if (nums.length === 0) return wells.map(() => 0)
     const min = Math.min(...nums)
     const max = Math.max(...nums)
     const range = max - min
@@ -97,14 +97,16 @@ export default function PlatePreview({ doc, result, colourBy, selectedWell, onWe
 
   return (
     <div className="plate-preview">
-      <div className="plate-controls">
-        <label className="colour-by-label">
-          Colour by
-          <select value={activeKey} onChange={e => onColourByChange(e.target.value)}>
-            {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
-          </select>
-        </label>
-      </div>
+      {opts.length > 0 && (
+        <div className="plate-controls">
+          <label className="colour-by-label">
+            Colour by
+            <select value={activeKey} onChange={e => onColourByChange(e.target.value)}>
+              {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </label>
+        </div>
+      )}
       <div
         className="plate-grid"
         style={{ gridTemplateColumns: `80px repeat(${plate.cols}, 44px)` }}

@@ -34,31 +34,11 @@ const DEFAULT_PH: PhAxis = {
   prepMode: 'mixing',
 }
 
-// §5 fixture as the default document
 const INIT: ScreenDocument = {
   version: 1,
-  meta: { name: 'PEG / Acetate screen', sample: 'Lysozyme' },
+  meta: {},
   plate: { rows: 4, cols: 6, wellVolume: 2000, volumeUnit: 'uL' },
-  axes: {
-    x: {
-      type: 'reagent',
-      name: 'PEG 3350',
-      stockConc: 50,
-      unit: '%w/v',
-      values: { kind: 'range', low: 18, high: 30 },
-    },
-    y: {
-      type: 'ph',
-      bufferName: 'Acetate',
-      concentration: 100,
-      concUnit: 'mM',
-      stockConc: 1,
-      stockUnit: 'M',
-      pKa: 4.76,
-      pH: { kind: 'list', values: [4.6, 5.0, 5.4, 5.8] },
-      prepMode: 'mixing',
-    },
-  },
+  axes: { x: null, y: null },
   constants: [],
 }
 

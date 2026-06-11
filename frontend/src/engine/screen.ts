@@ -8,8 +8,19 @@ const DEFAULTS = {
   deadVolumeMultiplier: 1.2,
 }
 
+/** An axis is "ready" only once the user has given it a name. */
+function isReady(ax: ScreenDocument['axes']['x']): ax is NonNullable<typeof ax> {
+  if (!ax) return false
+  return ax.type === 'reagent' ? ax.name.trim() !== '' : ax.bufferName.trim() !== ''
+}
+
 export function computeGrid(doc: ScreenDocument): GridResult {
-  const { plate, axes, constants, config = {} } = doc
+  const { plate, constants, config = {} } = doc
+  // Treat unnamed axes as absent so the preview stays neutral until the user configures them.
+  const axes = {
+    x: isReady(doc.axes.x) ? doc.axes.x : null,
+    y: isReady(doc.axes.y) ? doc.axes.y : null,
+  }
   const cfg = {
     minPipetteVolumeUL:   config.minPipetteVolumeUL   ?? DEFAULTS.minPipetteVolumeUL,
     pipetteResolutionUL:  config.pipetteResolutionUL  ?? DEFAULTS.pipetteResolutionUL,
