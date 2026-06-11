@@ -1,0 +1,108 @@
+import { create } from 'zustand'
+import type { AxisDef, ConstantAdditive, PhAxis, PlateSpec, ReagentAxis, ScreenDocument, ScreenMeta } from './engine'
+
+interface AppStore {
+  doc: ScreenDocument
+  step: 1 | 2 | 3
+  setStep: (s: 1 | 2 | 3) => void
+  updateMeta: (m: Partial<ScreenMeta>) => void
+  updatePlate: (p: Partial<PlateSpec>) => void
+  setAxisType: (ax: 'x' | 'y', t: 'none' | 'reagent' | 'ph') => void
+  updateAxis: (ax: 'x' | 'y', def: AxisDef) => void
+  addConstant: () => void
+  removeConstant: (i: number) => void
+  updateConstant: (i: number, c: Partial<ConstantAdditive>) => void
+}
+
+const DEFAULT_REAGENT: ReagentAxis = {
+  type: 'reagent',
+  name: '',
+  stockConc: 100,
+  unit: 'mM',
+  values: { kind: 'range', low: 10, high: 100 },
+}
+
+const DEFAULT_PH: PhAxis = {
+  type: 'ph',
+  bufferName: '',
+  concentration: 100,
+  concUnit: 'mM',
+  stockConc: 1,
+  stockUnit: 'M',
+  pKa: 7.0,
+  pH: { kind: 'range', low: 6.5, high: 8.0 },
+  prepMode: 'mixing',
+}
+
+// §5 fixture as the default document
+const INIT: ScreenDocument = {
+  version: 1,
+  meta: { name: 'PEG / Acetate screen', sample: 'Lysozyme' },
+  plate: { rows: 4, cols: 6, wellVolume: 2000, volumeUnit: 'uL' },
+  axes: {
+    x: {
+      type: 'reagent',
+      name: 'PEG 3350',
+      stockConc: 50,
+      unit: '%w/v',
+      values: { kind: 'range', low: 18, high: 30 },
+    },
+    y: {
+      type: 'ph',
+      bufferName: 'Acetate',
+      concentration: 100,
+      concUnit: 'mM',
+      stockConc: 1,
+      stockUnit: 'M',
+      pKa: 4.76,
+      pH: { kind: 'list', values: [4.6, 5.0, 5.4, 5.8] },
+      prepMode: 'mixing',
+    },
+  },
+  constants: [],
+}
+
+export const useStore = create<AppStore>(set => ({
+  doc: INIT,
+  step: 1,
+
+  setStep: step => set({ step }),
+
+  updateMeta: m => set(s => ({
+    doc: { ...s.doc, meta: { ...s.doc.meta, ...m } },
+  })),
+
+  updatePlate: p => set(s => ({
+    doc: { ...s.doc, plate: { ...s.doc.plate, ...p } },
+  })),
+
+  setAxisType: (ax, t) => set(s => ({
+    doc: {
+      ...s.doc,
+      axes: {
+        ...s.doc.axes,
+        [ax]: t === 'none' ? null : t === 'reagent' ? { ...DEFAULT_REAGENT } : { ...DEFAULT_PH },
+      },
+    },
+  })),
+
+  updateAxis: (ax, def) => set(s => ({
+    doc: { ...s.doc, axes: { ...s.doc.axes, [ax]: def } },
+  })),
+
+  addConstant: () => set(s => {
+    const c: ConstantAdditive = { name: '', stockConc: 100, unit: 'mM', targetConc: 10 }
+    return { doc: { ...s.doc, constants: [...s.doc.constants, c] } }
+  }),
+
+  removeConstant: i => set(s => ({
+    doc: { ...s.doc, constants: s.doc.constants.filter((_, j) => j !== i) },
+  })),
+
+  updateConstant: (i, c) => set(s => ({
+    doc: {
+      ...s.doc,
+      constants: s.doc.constants.map((x, j) => j === i ? { ...x, ...c } : x),
+    },
+  })),
+}))

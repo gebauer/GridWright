@@ -1,5 +1,4 @@
 import { expandValues } from './expand'
-import { concRatio } from './units'
 import { computeWell } from './well'
 import type { GridResult, PhAxis, PrepEntry, ScreenDocument, Warning } from './types'
 
@@ -21,45 +20,50 @@ export function computeGrid(doc: ScreenDocument): GridResult {
     ? plate.wellVolume * 1000
     : plate.wellVolume
 
-  // Expand axis values
-  const xValues = axes.x ? expandValues(
-    axes.x.type === 'reagent' ? axes.x.values : axes.x.pH,
-    plate.cols,
-  ) : null
+  // Detect list-length mismatches upfront so they appear as global warnings.
+  const structureWarnings: Warning[] = []
+  if (axes.x) {
+    const spec = axes.x.type === 'reagent' ? axes.x.values : axes.x.pH
+    if (spec.kind === 'list' && spec.values.length !== plate.cols)
+      structureWarnings.push({ kind: 'list-length-mismatch', axis: 'x', expected: plate.cols, got: spec.values.length })
+  }
+  if (axes.y) {
+    const spec = axes.y.type === 'reagent' ? axes.y.values : axes.y.pH
+    if (spec.kind === 'list' && spec.values.length !== plate.rows)
+      structureWarnings.push({ kind: 'list-length-mismatch', axis: 'y', expected: plate.rows, got: spec.values.length })
+  }
 
-  const yValues = axes.y ? expandValues(
-    axes.y.type === 'reagent' ? axes.y.values : axes.y.pH,
-    plate.rows,
-  ) : null
+  const xValues = axes.x
+    ? expandValues(axes.x.type === 'reagent' ? axes.x.values : axes.x.pH, plate.cols)
+    : null
+  const yValues = axes.y
+    ? expandValues(axes.y.type === 'reagent' ? axes.y.values : axes.y.pH, plate.rows)
+    : null
 
   const wells = []
   for (let r = 0; r < plate.rows; r++) {
     for (let c = 0; c < plate.cols; c++) {
-      const well = computeWell(
+      wells.push(computeWell(
         r, c,
         { def: axes.x, value: xValues ? xValues[c] : null },
         { def: axes.y, value: yValues ? yValues[r] : null },
         constants,
         wellVolumeUL,
         cfg,
-      )
-      wells.push(well)
+      ))
     }
   }
 
-  // Aggregate global warnings (unique kinds)
-  const globalWarnings: Warning[] = []
+  // Deduplicated global warnings (unit-mismatch and cannot-concentrate are per-reagent, not per-well)
+  const seen = new Set<string>()
+  const globalWarnings: Warning[] = [...structureWarnings]
   for (const w of wells.flatMap(w => w.warnings)) {
-    if (w.kind === 'unit-mismatch' || w.kind === 'cannot-concentrate') {
-      if (!globalWarnings.some(g => g.kind === w.kind && 'reagent' in g && g.reagent === (w as { reagent: string }).reagent)) {
-        globalWarnings.push(w)
-      }
-    }
+    if (w.kind !== 'unit-mismatch' && w.kind !== 'cannot-concentrate') continue
+    const key = `${w.kind}:${w.reagent}`
+    if (!seen.has(key)) { seen.add(key); globalWarnings.push(w) }
   }
 
-  // Build prep list
-  const prep = buildPrepList(doc, wells, xValues, yValues, wellVolumeUL, cfg.deadVolumeMultiplier)
-
+  const prep = buildPrepList(doc, wells, xValues, yValues, cfg.deadVolumeMultiplier)
   return { wells, prep, warnings: globalWarnings }
 }
 
@@ -68,10 +72,8 @@ function buildPrepList(
   wells: ReturnType<typeof computeWell>[],
   xValues: number[] | null,
   yValues: number[] | null,
-  wellVolumeUL: number,
   deadVolMultiplier: number,
 ): PrepEntry[] {
-  // Accumulate total volume per stock name
   const totals = new Map<string, number>()
   const meta   = new Map<string, { conc: string }>()
 
@@ -81,13 +83,12 @@ function buildPrepList(
     }
   }
 
-  // Register metadata for each stock name
   if (doc.axes.x) {
     const ax = doc.axes.x
     if (ax.type === 'reagent') {
       meta.set(ax.name, { conc: `${ax.stockConc} ${ax.unit}` })
     } else {
-      registerPhStockMeta(ax, meta, xValues ?? [], doc.plate.cols, wellVolumeUL)
+      registerPhStockMeta(ax, meta, xValues ?? [])
     }
   }
   if (doc.axes.y) {
@@ -95,7 +96,7 @@ function buildPrepList(
     if (ax.type === 'reagent') {
       meta.set(ax.name, { conc: `${ax.stockConc} ${ax.unit}` })
     } else {
-      registerPhStockMeta(ax, meta, yValues ?? [], doc.plate.rows, wellVolumeUL)
+      registerPhStockMeta(ax, meta, yValues ?? [])
     }
   }
   for (const c of doc.constants) {
@@ -112,20 +113,18 @@ function buildPrepList(
 function registerPhStockMeta(
   ax: PhAxis,
   meta: Map<string, { conc: string }>,
-  _expanded: number[],
-  _count: number,
-  _wellVolumeUL: number,
+  expanded: number[],
 ): void {
   const concStr = `${ax.stockConc} ${ax.stockUnit}`
   if (ax.prepMode === 'individual') {
-    const vals = ax.pH.kind === 'list' ? ax.pH.values : [ax.pH.low, ax.pH.high]
-    for (const p of vals) {
+    // One stock per distinct target pH
+    for (const p of expanded) {
       meta.set(`${ax.bufferName} pH ${p}`, { conc: concStr })
     }
   } else {
-    const vals = ax.pH.kind === 'list' ? ax.pH.values : [ax.pH.low, ax.pH.high]
-    const pHLow  = Math.min(...vals)
-    const pHHigh = Math.max(...vals)
+    // Two stocks: one at pHLow, one at pHHigh
+    const pHLow  = Math.min(...expanded)
+    const pHHigh = Math.max(...expanded)
     meta.set(`${ax.bufferName} pH ${pHHigh}`, { conc: concStr })
     meta.set(`${ax.bufferName} pH ${pHLow}`,  { conc: concStr })
   }

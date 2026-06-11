@@ -71,11 +71,12 @@ export interface ScreenDocument {
 // --- Engine output types ---
 
 export type Warning =
-  | { kind: 'over-volume';        well: string; overflowUL: number; culprit: string }
-  | { kind: 'cannot-concentrate'; well: string; reagent: string; minStockConc: number; unit: ConcUnit }
-  | { kind: 'sub-pipettable';     well: string; reagent: string; volumeUL: number }
-  | { kind: 'ph-out-of-range';    well: string; targetPH: number; rangeLow: number; rangeHigh: number }
-  | { kind: 'unit-mismatch';      reagent: string; message: string }
+  | { kind: 'over-volume';          well: string; overflowUL: number; culprit: string }
+  | { kind: 'cannot-concentrate';   well: string; reagent: string; minStockConc: number; unit: ConcUnit }
+  | { kind: 'sub-pipettable';       well: string; reagent: string; volumeUL: number }
+  | { kind: 'ph-out-of-range';      well: string; targetPH: number; rangeLow: number; rangeHigh: number }
+  | { kind: 'unit-mismatch';        reagent: string; message: string }
+  | { kind: 'list-length-mismatch'; axis: 'x' | 'y'; expected: number; got: number }
 
 export interface WellRecipe {
   row: number

@@ -1,14 +1,14 @@
-import { concRatio, roundTo, sameFamily } from './units'
+import { concRatio, roundTo } from './units'
 import { mixingVolumes } from './ph'
 import type {
   AxisDef,
   ConstantAdditive,
-  ConcUnit,
+  PhAxis,
   Warning,
   WellRecipe,
 } from './types'
 
-interface EngineConfig {
+export interface EngineConfig {
   minPipetteVolumeUL: number
   pipetteResolutionUL: number
 }
@@ -42,13 +42,7 @@ export function computeWell(
       try {
         const r = concRatio(value, def.unit, def.stockConc, def.unit)
         if (r >= 1) {
-          warnings.push({
-            kind: 'cannot-concentrate',
-            well: label,
-            reagent: def.name,
-            minStockConc: value,
-            unit: def.unit,
-          })
+          warnings.push({ kind: 'cannot-concentrate', well: label, reagent: def.name, minStockConc: value, unit: def.unit })
         }
         vStock = r * wellVolumeUL
       } catch {
@@ -58,7 +52,6 @@ export function computeWell(
       components.push({ name: def.name, volumeUL: vStock })
 
     } else {
-      // PhAxis
       axisValues[axisName] = value
       let vBuf: number
       try {
@@ -71,9 +64,7 @@ export function computeWell(
       if (def.prepMode === 'individual') {
         components.push({ name: `${def.bufferName} pH ${value}`, volumeUL: vBuf })
       } else {
-        const allPHValues = expandedPHValues(def)
-        const pHLow  = Math.min(...allPHValues)
-        const pHHigh = Math.max(...allPHValues)
+        const { pHLow, pHHigh } = phStockRange(def)
         const { vHigh, vLow, outOfRange } = mixingVolumes(value, pHLow, pHHigh, def.pKa, vBuf)
         if (outOfRange) {
           warnings.push({ kind: 'ph-out-of-range', well: label, targetPH: value, rangeLow: pHLow, rangeHigh: pHHigh })
@@ -87,16 +78,9 @@ export function computeWell(
   for (const c of constants) {
     let vStock: number
     try {
-      if (!sameFamily(c.unit, c.unit)) throw new Error()
       const r = concRatio(c.targetConc, c.unit, c.stockConc, c.unit)
       if (r >= 1) {
-        warnings.push({
-          kind: 'cannot-concentrate',
-          well: label,
-          reagent: c.name,
-          minStockConc: c.targetConc,
-          unit: c.unit,
-        })
+        warnings.push({ kind: 'cannot-concentrate', well: label, reagent: c.name, minStockConc: c.targetConc, unit: c.unit })
       }
       vStock = r * wellVolumeUL
     } catch {
@@ -106,7 +90,6 @@ export function computeWell(
     components.push({ name: c.name, volumeUL: vStock })
   }
 
-  // Round each component to pipette resolution
   const rounded = components.map(c => ({
     name: c.name,
     volumeUL: roundTo(c.volumeUL, cfg.pipetteResolutionUL),
@@ -120,30 +103,24 @@ export function computeWell(
     warnings.push({ kind: 'over-volume', well: label, overflowUL: -waterUL, culprit })
   }
 
-  // Sub-pipettable check
   for (const c of rounded) {
     if (c.volumeUL > 0 && c.volumeUL < cfg.minPipetteVolumeUL) {
       warnings.push({ kind: 'sub-pipettable', well: label, reagent: c.name, volumeUL: c.volumeUL })
     }
   }
 
-  return {
-    row, col, label, axisValues,
-    components: rounded,
-    waterUL,
-    totalUL: wellVolumeUL,
-    warnings,
-  }
+  return { row, col, label, axisValues, components: rounded, waterUL, totalUL: wellVolumeUL, warnings }
 }
 
-/** Expand a PhAxis's pH ValueSpec into its array of values */
-function expandedPHValues(def: { pH: import('./types').ValueSpec; prepMode: 'individual' | 'mixing' }): number[] {
+/**
+ * Derive the two stock pH endpoints for mixing mode.
+ * For a range spec, stocks are at [low, high]; for a list, stocks are at [min, max].
+ * The actual per-well target comes from the expanded axis value, not from here.
+ */
+function phStockRange(def: PhAxis): { pHLow: number; pHHigh: number } {
   const spec = def.pH
-  if (spec.kind === 'list') return spec.values
-  // For range we need the count — but we don't have it here; this is only
-  // used to find min/max for mixing mode, so return [low, high]
-  return [spec.low, spec.high]
+  if (spec.kind === 'list') {
+    return { pHLow: Math.min(...spec.values), pHHigh: Math.max(...spec.values) }
+  }
+  return { pHLow: spec.low, pHHigh: spec.high }
 }
-
-/** Needed by screen.ts to pass correct expanded values */
-export type { EngineConfig }
