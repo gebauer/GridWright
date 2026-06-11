@@ -12,6 +12,12 @@ interface Props {
   onColourByChange: (key: string) => void
 }
 
+/** Mirrors the engine's isReady — must stay in sync with screen.ts */
+function isAxisReady(ax: AxisDef): ax is NonNullable<AxisDef> {
+  if (!ax) return false
+  return ax.type === 'reagent' ? ax.name.trim() !== '' : ax.bufferName.trim() !== ''
+}
+
 // Slate-50 → Indigo-600
 function heatColor(t: number): string {
   const r = Math.round(248 - (248 - 79) * t)
@@ -24,14 +30,14 @@ function colourOptions(doc: ScreenDocument): { key: string; label: string }[] {
   const opts: { key: string; label: string }[] = []
   const axLabel = (ax: NonNullable<AxisDef>) =>
     ax.type === 'reagent' ? ax.name : `pH (${ax.bufferName})`
-  if (doc.axes.x) opts.push({ key: 'x', label: axLabel(doc.axes.x) })
-  if (doc.axes.y) opts.push({ key: 'y', label: axLabel(doc.axes.y) })
-  for (const c of doc.constants) opts.push({ key: `c:${c.name}`, label: c.name })
+  if (isAxisReady(doc.axes.x)) opts.push({ key: 'x', label: axLabel(doc.axes.x) })
+  if (isAxisReady(doc.axes.y)) opts.push({ key: 'y', label: axLabel(doc.axes.y) })
+  for (const c of doc.constants) if (c.name.trim()) opts.push({ key: `c:${c.name}`, label: c.name })
   return opts
 }
 
 function axisHeaders(ax: AxisDef, n: number): string[] {
-  if (!ax) return Array.from({ length: n }, (_, i) => String(i + 1))
+  if (!isAxisReady(ax)) return Array.from({ length: n }, (_, i) => String(i + 1))
   const spec = ax.type === 'reagent' ? ax.values : ax.pH
   const unit = ax.type === 'reagent' ? ax.unit : undefined
   return expandValues(spec, n).map(v => formatAxisHeader(v, ax.type, unit))

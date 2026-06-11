@@ -13,9 +13,15 @@ import './App.css'
 const STEPS = ['Geometry', 'Axes', 'Constants'] as const
 
 export default function App() {
-  const { doc, step, setStep } = useStore()
+  const { doc, step, setStep, reset } = useStore()
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null)
   const [colourBy, setColourBy] = useState('x')
+
+  function handleReset() {
+    reset()
+    setSelectedLabel(null)
+    setColourBy('x')
+  }
 
   const result = useMemo(() => computeGrid(doc), [doc])
 
@@ -36,6 +42,7 @@ export default function App() {
             {doc.meta.sample && <> · {doc.meta.sample}</>}
           </span>
         )}
+        <button className="btn-new-screen" onClick={handleReset}>New screen</button>
       </header>
 
       <div className="app-body">
