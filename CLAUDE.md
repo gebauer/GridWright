@@ -62,7 +62,7 @@ docker compose up --build
   the edge-case tests (over-volume, cannot-concentrate, sub-pipettable, pH-out-of-range).
 - Keep dependencies minimal. Frontend: React, Vite, Vitest, and optionally Zustand for state.
   Backend: FastAPI, Uvicorn, Pydantic. Flag before adding anything else.
-
+- Always make sure that you can continue work, in the case tokens run out in the middle of a coding run.
 ## Domain quick-reference (so you don't reinvent it)
 
 - **Axes:** X varies across columns; Y varies across rows; constants apply to all wells; water

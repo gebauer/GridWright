@@ -1,0 +1,149 @@
+import { concRatio, roundTo, sameFamily } from './units'
+import { mixingVolumes } from './ph'
+import type {
+  AxisDef,
+  ConstantAdditive,
+  ConcUnit,
+  Warning,
+  WellRecipe,
+} from './types'
+
+interface EngineConfig {
+  minPipetteVolumeUL: number
+  pipetteResolutionUL: number
+}
+
+interface AxisInput {
+  def: AxisDef
+  value: number | null
+}
+
+export function computeWell(
+  row: number,
+  col: number,
+  xInput: AxisInput,
+  yInput: AxisInput,
+  constants: ConstantAdditive[],
+  wellVolumeUL: number,
+  cfg: EngineConfig,
+): WellRecipe {
+  const label = String.fromCharCode(65 + row) + String(col + 1)
+  const warnings: Warning[] = []
+  const components: { name: string; volumeUL: number }[] = []
+  const axisValues: { x?: number; y?: number } = {}
+
+  for (const [axisName, input] of [['x', xInput], ['y', yInput]] as const) {
+    const { def, value } = input
+    if (def === null || value === null) continue
+
+    if (def.type === 'reagent') {
+      axisValues[axisName] = value
+      let vStock: number
+      try {
+        const r = concRatio(value, def.unit, def.stockConc, def.unit)
+        if (r >= 1) {
+          warnings.push({
+            kind: 'cannot-concentrate',
+            well: label,
+            reagent: def.name,
+            minStockConc: value,
+            unit: def.unit,
+          })
+        }
+        vStock = r * wellVolumeUL
+      } catch {
+        warnings.push({ kind: 'unit-mismatch', reagent: def.name, message: `Unit mismatch on axis ${axisName}` })
+        vStock = 0
+      }
+      components.push({ name: def.name, volumeUL: vStock })
+
+    } else {
+      // PhAxis
+      axisValues[axisName] = value
+      let vBuf: number
+      try {
+        vBuf = concRatio(def.concentration, def.concUnit, def.stockConc, def.stockUnit) * wellVolumeUL
+      } catch {
+        warnings.push({ kind: 'unit-mismatch', reagent: def.bufferName, message: `Buffer unit mismatch on axis ${axisName}` })
+        continue
+      }
+
+      if (def.prepMode === 'individual') {
+        components.push({ name: `${def.bufferName} pH ${value}`, volumeUL: vBuf })
+      } else {
+        const allPHValues = expandedPHValues(def)
+        const pHLow  = Math.min(...allPHValues)
+        const pHHigh = Math.max(...allPHValues)
+        const { vHigh, vLow, outOfRange } = mixingVolumes(value, pHLow, pHHigh, def.pKa, vBuf)
+        if (outOfRange) {
+          warnings.push({ kind: 'ph-out-of-range', well: label, targetPH: value, rangeLow: pHLow, rangeHigh: pHHigh })
+        }
+        components.push({ name: `${def.bufferName} pH ${pHHigh}`, volumeUL: vHigh })
+        components.push({ name: `${def.bufferName} pH ${pHLow}`,  volumeUL: vLow })
+      }
+    }
+  }
+
+  for (const c of constants) {
+    let vStock: number
+    try {
+      if (!sameFamily(c.unit, c.unit)) throw new Error()
+      const r = concRatio(c.targetConc, c.unit, c.stockConc, c.unit)
+      if (r >= 1) {
+        warnings.push({
+          kind: 'cannot-concentrate',
+          well: label,
+          reagent: c.name,
+          minStockConc: c.targetConc,
+          unit: c.unit,
+        })
+      }
+      vStock = r * wellVolumeUL
+    } catch {
+      warnings.push({ kind: 'unit-mismatch', reagent: c.name, message: 'Constant unit mismatch' })
+      vStock = 0
+    }
+    components.push({ name: c.name, volumeUL: vStock })
+  }
+
+  // Round each component to pipette resolution
+  const rounded = components.map(c => ({
+    name: c.name,
+    volumeUL: roundTo(c.volumeUL, cfg.pipetteResolutionUL),
+  }))
+
+  const totalStock = rounded.reduce((s, c) => s + c.volumeUL, 0)
+  const waterUL = wellVolumeUL - totalStock
+
+  if (waterUL < 0) {
+    const culprit = rounded.reduce((a, b) => (b.volumeUL > a.volumeUL ? b : a)).name
+    warnings.push({ kind: 'over-volume', well: label, overflowUL: -waterUL, culprit })
+  }
+
+  // Sub-pipettable check
+  for (const c of rounded) {
+    if (c.volumeUL > 0 && c.volumeUL < cfg.minPipetteVolumeUL) {
+      warnings.push({ kind: 'sub-pipettable', well: label, reagent: c.name, volumeUL: c.volumeUL })
+    }
+  }
+
+  return {
+    row, col, label, axisValues,
+    components: rounded,
+    waterUL,
+    totalUL: wellVolumeUL,
+    warnings,
+  }
+}
+
+/** Expand a PhAxis's pH ValueSpec into its array of values */
+function expandedPHValues(def: { pH: import('./types').ValueSpec; prepMode: 'individual' | 'mixing' }): number[] {
+  const spec = def.pH
+  if (spec.kind === 'list') return spec.values
+  // For range we need the count — but we don't have it here; this is only
+  // used to find min/max for mixing mode, so return [low, high]
+  return [spec.low, spec.high]
+}
+
+/** Needed by screen.ts to pass correct expanded values */
+export type { EngineConfig }
