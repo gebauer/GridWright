@@ -1,8 +1,8 @@
 services:
   app:
     build: .
-    ports:
-      - "8000:8000"
+ #   ports:               # expose ports if you run it directly, but no need if deployed by coolify
+ #     - "8000:8000"
     volumes:
       - ./data:/data
     environment:
