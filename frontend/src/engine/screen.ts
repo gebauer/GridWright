@@ -131,13 +131,13 @@ function registerPhStockMeta(
   if (ax.prepMode === 'individual') {
     // One stock per distinct target pH
     for (const p of expanded) {
-      meta.set(`${ax.bufferName} pH ${p}`, { conc: concStr })
+      meta.set(`${ax.bufferName} pH ${p.toFixed(1)}`, { conc: concStr })
     }
   } else {
     // Two stocks: one at pHLow, one at pHHigh
     const pHLow  = Math.min(...expanded)
     const pHHigh = Math.max(...expanded)
-    meta.set(`${ax.bufferName} pH ${pHHigh}`, { conc: concStr })
-    meta.set(`${ax.bufferName} pH ${pHLow}`,  { conc: concStr })
+    meta.set(`${ax.bufferName} pH ${pHHigh.toFixed(1)}`, { conc: concStr })
+    meta.set(`${ax.bufferName} pH ${pHLow.toFixed(1)}`,  { conc: concStr })
   }
 }

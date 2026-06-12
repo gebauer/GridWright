@@ -62,15 +62,15 @@ export function computeWell(
       }
 
       if (def.prepMode === 'individual') {
-        components.push({ name: `${def.bufferName} pH ${value}`, volumeUL: vBuf })
+        components.push({ name: `${def.bufferName} pH ${fmtPH(value)}`, volumeUL: vBuf })
       } else {
         const { pHLow, pHHigh } = phStockRange(def)
         const { vHigh, vLow, outOfRange } = mixingVolumes(value, pHLow, pHHigh, def.pKa, vBuf)
         if (outOfRange) {
           warnings.push({ kind: 'ph-out-of-range', well: label, targetPH: value, rangeLow: pHLow, rangeHigh: pHHigh })
         }
-        components.push({ name: `${def.bufferName} pH ${pHHigh}`, volumeUL: vHigh })
-        components.push({ name: `${def.bufferName} pH ${pHLow}`,  volumeUL: vLow })
+        components.push({ name: `${def.bufferName} pH ${fmtPH(pHHigh)}`, volumeUL: vHigh })
+        components.push({ name: `${def.bufferName} pH ${fmtPH(pHLow)}`,  volumeUL: vLow })
       }
     }
   }
@@ -123,4 +123,8 @@ function phStockRange(def: PhAxis): { pHLow: number; pHHigh: number } {
     return { pHLow: Math.min(...spec.values), pHHigh: Math.max(...spec.values) }
   }
   return { pHLow: spec.low, pHHigh: spec.high }
+}
+
+function fmtPH(n: number): string {
+  return n.toFixed(1)
 }

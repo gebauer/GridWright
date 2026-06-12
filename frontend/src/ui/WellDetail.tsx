@@ -20,14 +20,14 @@ export default function WellDetail({ well, doc, onClose }: Props) {
           <span className="axis-chip">
             {doc.axes.x.type === 'reagent'
               ? `${doc.axes.x.name}: ${fmtN(well.axisValues.x)} ${doc.axes.x.unit}`
-              : `pH ${fmtN(well.axisValues.x)}`}
+              : `pH ${well.axisValues.x.toFixed(1)}`}
           </span>
         )}
         {well.axisValues.y !== undefined && doc.axes.y && (
           <span className="axis-chip">
             {doc.axes.y.type === 'reagent'
               ? `${doc.axes.y.name}: ${fmtN(well.axisValues.y)} ${doc.axes.y.unit}`
-              : `pH ${fmtN(well.axisValues.y)}`}
+              : `pH ${well.axisValues.y.toFixed(1)}`}
           </span>
         )}
       </div>

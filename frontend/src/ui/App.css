@@ -631,9 +631,13 @@
 }
 
 .recipe-table {
-  width: 100%;
+  width: auto;
   border-collapse: collapse;
   font-size: 0.85rem;
+}
+
+.recipe-table tr:nth-child(even) td {
+  background: #f8fafc;
 }
 
 .recipe-table td {
@@ -708,7 +712,7 @@
 }
 
 .prep-table {
-  width: 100%;
+  width: auto;
   border-collapse: collapse;
   font-size: 0.85rem;
 }
@@ -722,6 +726,10 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 2px solid #e2e8f0;
+}
+
+.prep-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
 }
 
 .prep-table td {
