@@ -7,6 +7,8 @@ import compoundsData from '../../../../compounds.json'
 
 const ALL_COMPOUNDS: Compound[] = (compoundsData as { compounds: Compound[] }).compounds
 
+const vc = (valid: boolean) => valid ? 'field-valid' : 'field-invalid'
+
 const UNIT_FAMILIES: { value: ConcUnit; label: string }[][] = [
   [{ value: 'M', label: 'M' }, { value: 'mM', label: 'mM' }, { value: 'uM', label: 'µM' }],
   [{ value: '%w/v', label: '%w/v' }],
@@ -56,6 +58,7 @@ function ValueSpecInput({
   n,
   onChange,
   fieldWarnings,
+  valid,
   unit,
   unitOptions,
   onUnitChange,
@@ -64,6 +67,7 @@ function ValueSpecInput({
   n: number
   onChange: (s: ValueSpec) => void
   fieldWarnings?: { low?: boolean; high?: boolean }
+  valid?: boolean
   unit?: ConcUnit
   unitOptions?: { value: ConcUnit; label: string }[]
   onUnitChange?: (u: ConcUnit) => void
@@ -111,7 +115,7 @@ function ValueSpecInput({
             <input
               type="number"
               value={spec.low}
-              className={fieldWarnings?.low ? 'input-ph-warn' : undefined}
+              className={fieldWarnings?.low ? 'input-ph-warn' : valid !== undefined ? vc(valid) : undefined}
               onChange={e => {
                 const v = parseFloat(e.target.value)
                 if (!isNaN(v)) onChange({ ...spec, low: v })
@@ -123,7 +127,7 @@ function ValueSpecInput({
             <input
               type="number"
               value={spec.high}
-              className={fieldWarnings?.high ? 'input-ph-warn' : undefined}
+              className={fieldWarnings?.high ? 'input-ph-warn' : valid !== undefined ? vc(valid) : undefined}
               onChange={e => {
                 const v = parseFloat(e.target.value)
                 if (!isNaN(v)) onChange({ ...spec, high: v })
@@ -145,6 +149,7 @@ function ValueSpecInput({
               type="text"
               key={spec.values.join(',')}
               defaultValue={spec.values.join(', ')}
+              className={valid !== undefined ? vc(valid) : undefined}
               onBlur={e => {
                 const vals = e.target.value
                   .split(',')
@@ -190,6 +195,12 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
   const targetUnitOptions = unitsInFamily(def.unit)
   const targetUnit = def.targetUnit ?? def.unit
 
+  const nameValid    = def.name.trim().length > 0
+  const stockValid   = def.stockConc > 0
+  const valuesValid  = def.values.kind === 'range'
+    ? def.values.low > 0 && def.values.high > 0 && def.values.low < def.values.high
+    : def.values.values.length === n && def.values.values.every(v => v > 0)
+
   return (
     <div className="axis-card">
       <div className="axis-card-title">{ax.toUpperCase()} — Reagent</div>
@@ -197,6 +208,7 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
       <label>Name</label>
       <CompoundAutocomplete
         value={def.name}
+        inputClassName={vc(nameValid)}
         onChange={name => set({ name })}
         onSelect={(c: Compound) => set({
           name: c.name,
@@ -212,6 +224,7 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
           Stock conc
           <input
             type="number" min={0}
+            className={vc(stockValid)}
             value={def.stockConc}
             onChange={e => { const v = parseFloat(e.target.value); if (v > 0) set({ stockConc: v }) }}
           />
@@ -221,7 +234,6 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
           <UnitSelect
             value={def.unit}
             onChange={u => {
-              // Reset targetUnit when stock family changes
               const newFamily = unitsInFamily(u)
               const tUnit = newFamily.some(o => o.value === targetUnit) ? targetUnit : u
               set({ unit: u, targetUnit: tUnit })
@@ -236,6 +248,7 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
       <ValueSpecInput
         spec={def.values}
         n={n}
+        valid={valuesValid}
         onChange={vs => set({ values: vs })}
         unit={targetUnit}
         unitOptions={targetUnitOptions}
@@ -256,7 +269,6 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
   const n = ax === 'x' ? doc.plate.cols : doc.plate.rows
   const set = (patch: Partial<PhAxis>) => updateAxis(ax, { ...def, ...patch })
 
-  // Use all pKas from the matched compound (if any), falling back to the single def.pKa
   const compound = ALL_COMPOUNDS.find(c => c.name === def.bufferName)
   const allPKas = (compound?.pKa && compound.pKa.length > 0) ? compound.pKa : [def.pKa]
 
@@ -265,6 +277,16 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
   const lowWarn  = phDistToNearestPKa(phLow,  allPKas) > PH_EFFECTIVE_RANGE
   const highWarn = phDistToNearestPKa(phHigh, allPKas) > PH_EFFECTIVE_RANGE
 
+  // Validation
+  const bufferNameValid  = def.bufferName.trim().length > 0
+  const stockConcValid   = def.stockConc > 0
+  const concValid        = def.concentration > 0
+  const pKaValid         = !isNaN(def.pKa) && def.pKa >= 0 && def.pKa <= 14
+  const phValuesValid    = def.pH.kind === 'range'
+    ? def.pH.low >= 0 && def.pH.high <= 14 && def.pH.low < def.pH.high
+    : def.pH.values.length === n && def.pH.values.every(v => v >= 0 && v <= 14)
+  const prepModeValid    = def.prepMode !== undefined
+
   return (
     <div className="axis-card">
       <div className="axis-card-title">{ax.toUpperCase()} — pH buffer</div>
@@ -272,6 +294,7 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
       <label>Buffer name</label>
       <CompoundAutocomplete
         value={def.bufferName}
+        inputClassName={vc(bufferNameValid)}
         onChange={bufferName => set({ bufferName })}
         onSelect={(c: Compound) => {
           const patch: Partial<PhAxis> = { bufferName: c.name }
@@ -297,6 +320,7 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
           Stock conc
           <input
             type="number" min={0}
+            className={vc(stockConcValid)}
             value={def.stockConc}
             onChange={e => { const v = parseFloat(e.target.value); if (v > 0) set({ stockConc: v }) }}
           />
@@ -312,6 +336,7 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
           Final conc
           <input
             type="number" min={0}
+            className={vc(concValid)}
             value={def.concentration}
             onChange={e => { const v = parseFloat(e.target.value); if (v > 0) set({ concentration: v }) }}
           />
@@ -326,6 +351,7 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
         pKa
         <input
           type="number" step={0.01}
+          className={vc(pKaValid)}
           value={def.pKa}
           onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) set({ pKa: v }) }}
         />
@@ -337,6 +363,7 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
       <ValueSpecInput
         spec={def.pH}
         n={n}
+        valid={phValuesValid}
         fieldWarnings={def.pH.kind === 'range' ? { low: lowWarn, high: highWarn } : undefined}
         onChange={vs => {
           const patch: Partial<PhAxis> = { pH: vs }
@@ -361,7 +388,7 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
         </p>
       )}
 
-      <fieldset className="radio-fieldset">
+      <fieldset className={`radio-fieldset ${vc(prepModeValid)}`}>
         <legend>pH Preparation mode</legend>
         <div className="radio-group">
           <label className="radio-label">

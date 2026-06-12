@@ -617,6 +617,40 @@
   background: #fff;
 }
 
+/* ── Validation states ──────────────────────────────────────── */
+
+.wizard-step input.field-invalid,
+.wizard-step select.field-invalid {
+  border-color: #f87171;
+  background: #fff5f5;
+  transition: border-color 0.25s, background 0.25s;
+}
+
+.wizard-step input.field-valid,
+.wizard-step select.field-valid {
+  border-color: #4ade80;
+  background: #f0fdf4;
+  transition: border-color 0.25s, background 0.25s;
+}
+
+.radio-fieldset.field-invalid {
+  border-color: #f87171;
+  transition: border-color 0.25s;
+}
+
+.radio-fieldset.field-valid {
+  border-color: #4ade80;
+  transition: border-color 0.25s;
+}
+
+.radio-fieldset.field-invalid legend {
+  color: #ef4444;
+}
+
+.radio-fieldset.field-valid legend {
+  color: #16a34a;
+}
+
 /* ── Axis cards ─────────────────────────────────────────────── */
 
 .axis-card {
@@ -690,8 +724,7 @@
   font-weight: 600;
   color: #64748b;
   padding: 0 0.3rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .radio-group {

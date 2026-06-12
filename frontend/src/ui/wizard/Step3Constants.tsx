@@ -3,6 +3,8 @@ import type { ConcUnit } from '../../engine'
 import CompoundAutocomplete from '../CompoundAutocomplete'
 import type { Compound } from '../../engine/compounds'
 
+const vc = (valid: boolean) => valid ? 'field-valid' : 'field-invalid'
+
 const ALL_UNITS: { value: ConcUnit; label: string }[] = [
   { value: 'M',     label: 'M'     },
   { value: 'mM',    label: 'mM'    },
@@ -62,6 +64,9 @@ export default function Step3Constants() {
           {constants.map((c, i) => {
             const targetUnitOptions = unitsInFamily(c.unit)
             const targetUnit = c.targetUnit ?? c.unit
+            const nameValid  = c.name.trim().length > 0
+            const stockValid = c.stockConc > 0
+            const targetValid = c.targetConc > 0
             return (
               <div key={i} className="constant-row">
                 <div className="field-row" style={{ alignItems: 'flex-end' }}>
@@ -69,6 +74,7 @@ export default function Step3Constants() {
                     <label>Name</label>
                     <CompoundAutocomplete
                       value={c.name}
+                      inputClassName={vc(nameValid)}
                       onChange={name => updateConstant(i, { name })}
                       onSelect={(compound: Compound) => {
                         const sUnit = compound.stock.unit as ConcUnit
@@ -90,6 +96,7 @@ export default function Step3Constants() {
                     Stock conc
                     <input
                       type="number" min={0}
+                      className={vc(stockValid)}
                       value={c.stockConc}
                       onChange={e => { const v = parseFloat(e.target.value); if (v > 0) updateConstant(i, { stockConc: v }) }}
                     />
@@ -116,6 +123,7 @@ export default function Step3Constants() {
                     Final conc
                     <input
                       type="number" min={0}
+                      className={vc(targetValid)}
                       value={c.targetConc}
                       onChange={e => { const v = parseFloat(e.target.value); if (v >= 0) updateConstant(i, { targetConc: v }) }}
                     />

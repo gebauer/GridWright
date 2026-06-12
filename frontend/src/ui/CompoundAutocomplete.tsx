@@ -10,9 +10,10 @@ interface Props {
   onChange: (name: string) => void
   onSelect: (compound: Compound) => void
   placeholder?: string
+  inputClassName?: string
 }
 
-export default function CompoundAutocomplete({ value, onChange, onSelect, placeholder }: Props) {
+export default function CompoundAutocomplete({ value, onChange, onSelect, placeholder, inputClassName }: Props) {
   const [open, setOpen] = useState(false)
   const [results, setResults] = useState<Compound[]>([])
   const [selected, setSelected] = useState<Compound | null>(null)
@@ -60,6 +61,7 @@ export default function CompoundAutocomplete({ value, onChange, onSelect, placeh
         onFocus={handleFocus}
         placeholder={placeholder}
         autoComplete="off"
+        className={inputClassName}
       />
 
       {open && (
