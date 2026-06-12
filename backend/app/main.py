@@ -24,6 +24,11 @@ def startup():
         sweep_expired(conn)
 
 
+@app.get('/healthz', include_in_schema=False)
+def healthz():
+    return {'status': 'ok'}
+
+
 @app.post('/api/screens', status_code=201)
 def create_screen(doc: ScreenDocument):
     raw = doc.model_dump_json()

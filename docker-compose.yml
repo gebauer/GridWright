@@ -8,3 +8,9 @@ services:
     environment:
       - DB_PATH=/data/gridwright.db
       # - SCREEN_TTL_DAYS=90
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
