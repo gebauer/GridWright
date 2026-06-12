@@ -33,7 +33,7 @@ const DEFAULT_PH: PhAxis = {
   stockUnit: 'M',
   pKa: 7.0,
   pH: { kind: 'range', low: 6.5, high: 8.0 },
-  prepMode: 'mixing',
+  prepMode: undefined,
 }
 
 const INIT: ScreenDocument = {

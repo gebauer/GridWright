@@ -132,6 +132,7 @@ function registerPhStockMeta(
   meta: Map<string, { conc: string }>,
   expanded: number[],
 ): void {
+  if (!ax.prepMode) return
   const concStr = `${ax.stockConc} ${ax.stockUnit}`
   if (ax.prepMode === 'individual') {
     // One stock per distinct target pH

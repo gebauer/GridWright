@@ -361,16 +361,31 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
         </p>
       )}
 
-      <label>
-        Preparation mode
-        <select
-          value={def.prepMode}
-          onChange={e => set({ prepMode: e.target.value as 'mixing' | 'individual' })}
-        >
-          <option value="mixing">Mixing — 2 stocks blended per well</option>
-          <option value="individual">Individual — one pre-adjusted stock per pH</option>
-        </select>
-      </label>
+      <fieldset className="radio-fieldset">
+        <legend>pH Preparation mode</legend>
+        <div className="radio-group">
+          <label className="radio-label">
+            <input
+              type="radio"
+              name={`prepMode-${ax}`}
+              value="mixing"
+              checked={def.prepMode === 'mixing'}
+              onChange={() => set({ prepMode: 'mixing' })}
+            />
+            Mixing — 2 stocks blended per well
+          </label>
+          <label className="radio-label">
+            <input
+              type="radio"
+              name={`prepMode-${ax}`}
+              value="individual"
+              checked={def.prepMode === 'individual'}
+              onChange={() => set({ prepMode: 'individual' })}
+            />
+            Individual — one pre-adjusted stock per pH
+          </label>
+        </div>
+      </fieldset>
     </div>
   )
 }

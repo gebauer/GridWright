@@ -676,6 +676,53 @@
   border-color: #4f46e5;
 }
 
+/* ── Radio group (prep mode) ────────────────────────────────── */
+
+.radio-fieldset {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem 0.6rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.radio-fieldset legend {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #64748b;
+  padding: 0 0.3rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.radio-fieldset .radio-label {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #334155;
+  cursor: pointer;
+  white-space: normal;
+  margin-bottom: 0;
+  flex: unset;
+}
+
+.radio-fieldset .radio-label input[type="radio"] {
+  accent-color: #4f46e5;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin: 0;
+}
+
 /* ── Constants list ─────────────────────────────────────────── */
 
 .constant-list {

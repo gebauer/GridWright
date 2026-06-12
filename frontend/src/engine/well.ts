@@ -64,7 +64,9 @@ export function computeWell(
         continue
       }
 
-      if (def.prepMode === 'individual') {
+      if (!def.prepMode) {
+        continue // prep mode not yet selected — skip until the user chooses
+      } else if (def.prepMode === 'individual') {
         components.push({ name: `${def.bufferName} pH ${fmtPH(value)}`, volumeUL: vBuf })
       } else {
         const { pHLow, pHHigh } = phStockRange(def)

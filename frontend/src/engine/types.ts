@@ -29,7 +29,7 @@ export interface PhAxis {
   stockUnit: ConcUnit
   pKa: number
   pH: ValueSpec
-  prepMode: 'individual' | 'mixing'
+  prepMode?: 'individual' | 'mixing'
 }
 
 export type AxisDef = ReagentAxis | PhAxis | null
