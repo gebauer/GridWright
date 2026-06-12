@@ -15,7 +15,8 @@ function isReady(ax: ScreenDocument['axes']['x']): ax is NonNullable<typeof ax> 
 }
 
 export function computeGrid(doc: ScreenDocument): GridResult {
-  const { plate, constants, config = {} } = doc
+  const { plate, constants } = doc
+  const config = doc.config ?? {}
   // Treat unnamed axes as absent so the preview stays neutral until the user configures them.
   const axes = {
     x: isReady(doc.axes.x) ? doc.axes.x : null,

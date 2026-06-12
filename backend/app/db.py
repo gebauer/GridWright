@@ -2,7 +2,7 @@ import os
 import sqlite3
 from contextlib import contextmanager
 
-DB_PATH = os.environ.get('DB_PATH', '/data/gridwright.db')
+DB_PATH = os.environ.get('DB_PATH', 'gridwright.db')
 
 
 def _connect() -> sqlite3.Connection:

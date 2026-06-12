@@ -31,8 +31,32 @@
   flex: 1;
 }
 
-.btn-new-screen {
+.header-actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-save {
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+  background: #4f46e5;
+  color: white;
+}
+
+.btn-save:hover:not(:disabled)   { background: #4338ca; }
+.btn-save:disabled                { opacity: 0.65; cursor: default; }
+.btn-save--saved                  { background: #16a34a; border-color: #bbf7d0; }
+.btn-save--error                  { background: #dc2626; border-color: #fca5a5; }
+
+.btn-new-screen {
   background: none;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -47,6 +71,37 @@
 .btn-new-screen:hover {
   background: #f1f5f9;
   color: #1e293b;
+}
+
+.slug-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.load-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1.5rem;
+  background: #fef2f2;
+  border-bottom: 1px solid #fca5a5;
+  color: #7f1d1d;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.load-error button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7f1d1d;
+  font-size: 1rem;
+  padding: 0 0.25rem;
+  font-family: inherit;
 }
 
 .app-body {
@@ -368,6 +423,32 @@
   color: #ef4444;
 }
 
+/* ── Export toolbar ─────────────────────────────────────────── */
+
+.export-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-export {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-export:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4f46e5;
+}
+
 /* ── Plate preview ──────────────────────────────────────────── */
 
 .plate-preview {
@@ -663,4 +744,128 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+}
+
+/* ── Print worksheet (screen: hidden; print: shown) ────────── */
+
+.pw { display: none; }
+
+@media print {
+  /* Hide all screen UI */
+  .app-header,
+  .panel-wizard,
+  .export-toolbar,
+  .well-detail,
+  .panel-preview > .plate-preview,
+  .panel-preview > .prep-list {
+    display: none !important;
+  }
+
+  body, .app, .app-body { display: block; height: auto; overflow: visible; }
+  .panel-preview { display: block; padding: 0; overflow: visible; }
+
+  /* ── Worksheet root ──────────────────────────── */
+  .pw {
+    display: block;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7.5pt;
+    color: #000;
+  }
+
+  /* ── Header line ─────────────────────────────── */
+  .pw-header-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 12pt;
+    font-size: 8pt;
+    font-weight: bold;
+    border-bottom: 1.5pt solid #000;
+    padding-bottom: 5pt;
+    margin-bottom: 6pt;
+  }
+
+  .pw-sep { color: #aaa; }
+
+  /* ── Plate grid ──────────────────────────────── */
+  .pw-plate {
+    display: grid;
+    width: 100%;
+    border-top: 1pt solid #000;
+    border-left: 1pt solid #000;
+  }
+
+  .pw-col-hdr {
+    border-right: 1pt solid #000;
+    border-bottom: 1pt solid #000;
+    text-align: center;
+    font-weight: bold;
+    font-size: 8pt;
+    padding: 3pt;
+    background: #f2f2f2;
+  }
+
+  .pw-row-hdr {
+    border-right: 1pt solid #000;
+    border-bottom: 1pt solid #000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 8pt;
+    padding: 4pt 2pt;
+    background: #f2f2f2;
+  }
+
+  .pw-well {
+    border-right: 1pt solid #000;
+    border-bottom: 1pt solid #000;
+    padding: 4pt;
+    vertical-align: top;
+    font-size: 7pt;
+    line-height: 1.45;
+  }
+
+  .pw-warn { background: #fff8e1; }
+
+  .pw-line { white-space: nowrap; }
+
+  .pw-water {
+    margin-top: 5pt;
+    color: #444;
+    white-space: nowrap;
+  }
+
+  /* ── Prep list ───────────────────────────────── */
+  .pw-prep {
+    margin-top: 14pt;
+    border-top: 1.5pt solid #000;
+    padding-top: 6pt;
+  }
+
+  .pw-prep h3 {
+    font-size: 9pt;
+    font-weight: bold;
+    margin: 0 0 6pt;
+  }
+
+  .pw-prep-table {
+    border-collapse: collapse;
+    font-size: 8pt;
+  }
+
+  .pw-prep-table th {
+    border: 0.5pt solid #888;
+    padding: 3pt 8pt;
+    background: #f2f2f2;
+    font-weight: bold;
+    text-align: left;
+  }
+
+  .pw-prep-table td {
+    border: 0.5pt solid #ccc;
+    padding: 2.5pt 8pt;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @page { margin: 10mm 12mm; }
 }

@@ -6,6 +6,7 @@ interface AppStore {
   step: 1 | 2 | 3
   setStep: (s: 1 | 2 | 3) => void
   reset: () => void
+  loadDoc: (doc: ScreenDocument) => void
   updateMeta: (m: Partial<ScreenMeta>) => void
   updatePlate: (p: Partial<PlateSpec>) => void
   setAxisType: (ax: 'x' | 'y', t: 'none' | 'reagent' | 'ph') => void
@@ -49,6 +50,7 @@ export const useStore = create<AppStore>(set => ({
 
   setStep: step => set({ step }),
   reset: () => set({ doc: { ...INIT }, step: 1 }),
+  loadDoc: (doc) => set({ doc, step: 1 }),
 
   updateMeta: m => set(s => ({
     doc: { ...s.doc, meta: { ...s.doc.meta, ...m } },
