@@ -1,5 +1,7 @@
 import { useStore } from '../../state'
 import type { ConcUnit } from '../../engine'
+import CompoundAutocomplete from '../CompoundAutocomplete'
+import type { Compound } from '../../engine/compounds'
 
 const CONC_UNITS: { value: ConcUnit; label: string }[] = [
   { value: 'M',     label: 'M'     },
@@ -32,14 +34,18 @@ export default function Step3Constants() {
           {constants.map((c, i) => (
             <div key={i} className="constant-row">
               <div className="field-row" style={{ alignItems: 'flex-end' }}>
-                <label style={{ flex: 2 }}>
-                  Name
-                  <input
-                    type="text"
+                <div style={{ flex: 2 }}>
+                  <label>Name</label>
+                  <CompoundAutocomplete
                     value={c.name}
-                    onChange={e => updateConstant(i, { name: e.target.value })}
+                    onChange={name => updateConstant(i, { name })}
+                    onSelect={(compound: Compound) => updateConstant(i, {
+                      name: compound.name,
+                      stockConc: compound.stock.value,
+                      unit: compound.stock.unit as ConcUnit,
+                    })}
                   />
-                </label>
+                </div>
                 <button className="btn-remove" onClick={() => removeConstant(i)} title="Remove">✕</button>
               </div>
               <div className="field-row">

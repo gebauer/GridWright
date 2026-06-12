@@ -1,5 +1,8 @@
 import { useStore } from '../../state'
 import type { ConcUnit, PhAxis, ReagentAxis, ValueSpec } from '../../engine'
+import CompoundAutocomplete from '../CompoundAutocomplete'
+import type { Compound } from '../../engine/compounds'
+import { nearestPKa } from '../../engine/compounds'
 
 const ALL_UNITS: { value: ConcUnit; label: string }[] = [
   { value: 'M',     label: 'M'     },
@@ -133,14 +136,16 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
     <div className="axis-card">
       <div className="axis-card-title">{ax.toUpperCase()} — Reagent</div>
 
-      <label>
-        Name
-        <input
-          type="text"
-          value={def.name}
-          onChange={e => set({ name: e.target.value })}
-        />
-      </label>
+      <label>Name</label>
+      <CompoundAutocomplete
+        value={def.name}
+        onChange={name => set({ name })}
+        onSelect={(c: Compound) => set({
+          name: c.name,
+          stockConc: c.stock.value,
+          unit: c.stock.unit as ConcUnit,
+        })}
+      />
 
       <div className="field-row">
         <label>
@@ -174,14 +179,28 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
     <div className="axis-card">
       <div className="axis-card-title">{ax.toUpperCase()} — pH buffer</div>
 
-      <label>
-        Buffer name
-        <input
-          type="text"
-          value={def.bufferName}
-          onChange={e => set({ bufferName: e.target.value })}
-        />
-      </label>
+      <label>Buffer name</label>
+      <CompoundAutocomplete
+        value={def.bufferName}
+        onChange={bufferName => set({ bufferName })}
+        onSelect={(c: Compound) => {
+          const patch: Partial<PhAxis> = { bufferName: c.name }
+          if (c.stock.unit === 'M' || c.stock.unit === 'mM' || c.stock.unit === 'uM') {
+            patch.stockConc = c.stock.value
+            patch.stockUnit = c.stock.unit as ConcUnit
+          }
+          if (c.pKa && c.pKa.length > 0) {
+            const phSpec = def.pH
+            const pHmid = phSpec.kind === 'range'
+              ? (phSpec.low + phSpec.high) / 2
+              : phSpec.values.length > 0
+                ? (Math.min(...phSpec.values) + Math.max(...phSpec.values)) / 2
+                : 7.0
+            patch.pKa = nearestPKa(c.pKa, pHmid)
+          }
+          set(patch)
+        }}
+      />
 
       <div className="field-row">
         <label>
