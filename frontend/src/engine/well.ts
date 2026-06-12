@@ -40,9 +40,10 @@ export function computeWell(
       axisValues[axisName] = value
       let vStock: number
       try {
-        const r = concRatio(value, def.unit, def.stockConc, def.unit)
+        const tUnit = def.targetUnit ?? def.unit
+        const r = concRatio(value, tUnit, def.stockConc, def.unit)
         if (r >= 1) {
-          warnings.push({ kind: 'cannot-concentrate', well: label, reagent: def.name, minStockConc: value, unit: def.unit })
+          warnings.push({ kind: 'cannot-concentrate', well: label, reagent: def.name, minStockConc: value, unit: tUnit })
         }
         vStock = r * wellVolumeUL
       } catch {
@@ -78,9 +79,10 @@ export function computeWell(
   for (const c of constants) {
     let vStock: number
     try {
-      const r = concRatio(c.targetConc, c.unit, c.stockConc, c.unit)
+      const tUnit = c.targetUnit ?? c.unit
+      const r = concRatio(c.targetConc, tUnit, c.stockConc, c.unit)
       if (r >= 1) {
-        warnings.push({ kind: 'cannot-concentrate', well: label, reagent: c.name, minStockConc: c.targetConc, unit: c.unit })
+        warnings.push({ kind: 'cannot-concentrate', well: label, reagent: c.name, minStockConc: c.targetConc, unit: tUnit })
       }
       vStock = r * wellVolumeUL
     } catch {

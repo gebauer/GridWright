@@ -56,6 +56,20 @@
 .btn-save--saved                  { background: #16a34a; border-color: #bbf7d0; }
 .btn-save--error                  { background: #dc2626; border-color: #fca5a5; }
 
+.btn-copy-link {
+  background: none;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4f46e5;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-copy-link:hover { background: #eef2ff; }
+.btn-copy-link--copied { border-color: #bbf7d0; color: #16a34a; }
+
 .btn-new-screen {
   background: none;
   border: 1px solid #e2e8f0;
@@ -71,6 +85,112 @@
 .btn-new-screen:hover {
   background: #f1f5f9;
   color: #1e293b;
+}
+
+.btn-help {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid #c7d2fe;
+  background: none;
+  color: #4f46e5;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.btn-help:hover { background: #eef2ff; }
+
+/* ── Help modal ──────────────────────────────────────────────── */
+
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.help-modal {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.help-modal-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.help-modal-body {
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem 1.75rem;
+}
+
+.help-section {
+  margin-bottom: 1.5rem;
+}
+
+.help-section:last-child {
+  margin-bottom: 0;
+}
+
+.help-section h3 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #4f46e5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.5rem;
+}
+
+.help-section h4 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.help-section p {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 0.4rem;
+}
+
+.help-section ul {
+  margin: 0.25rem 0 0.4rem 1.1rem;
+  padding: 0;
+}
+
+.help-section li {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 0.2rem;
 }
 
 .slug-loading {
@@ -341,6 +461,58 @@
   font-size: 0.8rem;
   font-weight: 700;
   color: #1e293b;
+}
+
+.preset-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.btn-preset {
+  flex: 1;
+  padding: 0.3rem 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+.btn-preset:hover   { background: #eef2ff; border-color: #c7d2fe; color: #4f46e5; }
+.btn-preset.active  { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+
+.input-ph-warn {
+  border-color: #fb923c !important;
+  background: #fff7ed !important;
+}
+
+.btn-fix-list {
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #fbbf24;
+  border-radius: 5px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-fix-list:hover { background: #fef3c7; }
+
+.ph-range-warn {
+  margin: 0.35rem 0 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 5px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .ws-empty {
@@ -726,6 +898,32 @@
 .recipe-table td {
   padding: 0.3rem 0.25rem;
   border-bottom: 1px solid #f1f5f9;
+}
+
+.recipe-table td.conc {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  padding-left: 0.5rem;
+  white-space: nowrap;
+}
+
+/* Changing axis value — bold indigo */
+.axis-value {
+  font-weight: 700;
+  color: #4f46e5;
+}
+
+/* Reagent axis concentration in the table */
+.recipe-table td.conc-axis {
+  font-weight: 700;
+  color: #4f46e5;
+  font-size: 0.82rem;
+}
+
+
+.axis-chip-label {
+  color: #6366f1;
+  font-weight: 400;
 }
 
 .recipe-table td.vol {

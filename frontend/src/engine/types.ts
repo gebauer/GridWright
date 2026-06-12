@@ -15,7 +15,8 @@ export interface ReagentAxis {
   type: 'reagent'
   name: string
   stockConc: number
-  unit: ConcUnit
+  unit: ConcUnit        // stock concentration unit
+  targetUnit?: ConcUnit // target conc unit — must be same family as unit; defaults to unit
   values: ValueSpec
 }
 
@@ -36,7 +37,8 @@ export type AxisDef = ReagentAxis | PhAxis | null
 export interface ConstantAdditive {
   name: string
   stockConc: number
-  unit: ConcUnit
+  unit: ConcUnit        // stock unit
+  targetUnit?: ConcUnit // final conc unit — must be same family as unit; defaults to unit
   targetConc: number
 }
 

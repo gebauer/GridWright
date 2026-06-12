@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { search } from '../engine/compounds'
 import type { Compound } from '../engine/compounds'
-import compoundsData from '../data/compounds.json'
+import compoundsData from '../../../compounds.json'
 
 const ALL: Compound[] = (compoundsData as { compounds: Compound[] }).compounds
 

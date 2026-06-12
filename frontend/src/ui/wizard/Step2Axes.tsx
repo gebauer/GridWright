@@ -3,6 +3,21 @@ import type { ConcUnit, PhAxis, ReagentAxis, ValueSpec } from '../../engine'
 import CompoundAutocomplete from '../CompoundAutocomplete'
 import type { Compound } from '../../engine/compounds'
 import { nearestPKa } from '../../engine/compounds'
+import compoundsData from '../../../../compounds.json'
+
+const ALL_COMPOUNDS: Compound[] = (compoundsData as { compounds: Compound[] }).compounds
+
+const UNIT_FAMILIES: { value: ConcUnit; label: string }[][] = [
+  [{ value: 'M', label: 'M' }, { value: 'mM', label: 'mM' }, { value: 'uM', label: 'µM' }],
+  [{ value: '%w/v', label: '%w/v' }],
+  [{ value: '%v/v', label: '%v/v' }],
+  [{ value: 'mg/mL', label: 'mg/mL' }],
+  [{ value: 'X', label: 'X' }],
+]
+
+function unitsInFamily(u: ConcUnit): { value: ConcUnit; label: string }[] {
+  return UNIT_FAMILIES.find(f => f.some(o => o.value === u)) ?? [{ value: u, label: u }]
+}
 
 const ALL_UNITS: { value: ConcUnit; label: string }[] = [
   { value: 'M',     label: 'M'     },
@@ -40,10 +55,18 @@ function ValueSpecInput({
   spec,
   n,
   onChange,
+  fieldWarnings,
+  unit,
+  unitOptions,
+  onUnitChange,
 }: {
   spec: ValueSpec
   n: number
   onChange: (s: ValueSpec) => void
+  fieldWarnings?: { low?: boolean; high?: boolean }
+  unit?: ConcUnit
+  unitOptions?: { value: ConcUnit; label: string }[]
+  onUnitChange?: (u: ConcUnit) => void
 }) {
   const isRange = spec.kind === 'range'
 
@@ -88,6 +111,7 @@ function ValueSpecInput({
             <input
               type="number"
               value={spec.low}
+              className={fieldWarnings?.low ? 'input-ph-warn' : undefined}
               onChange={e => {
                 const v = parseFloat(e.target.value)
                 if (!isNaN(v)) onChange({ ...spec, low: v })
@@ -99,29 +123,60 @@ function ValueSpecInput({
             <input
               type="number"
               value={spec.high}
+              className={fieldWarnings?.high ? 'input-ph-warn' : undefined}
               onChange={e => {
                 const v = parseFloat(e.target.value)
                 if (!isNaN(v)) onChange({ ...spec, high: v })
               }}
             />
           </label>
+          {unit && unitOptions && onUnitChange && (
+            <label>
+              Unit
+              <UnitSelect value={unit} options={unitOptions} onChange={onUnitChange} />
+            </label>
+          )}
         </div>
       ) : (
-        <label>
-          {`Values — comma-separated (${n} for ${n} step${n !== 1 ? 's' : ''})`}
-          <input
-            type="text"
-            key={spec.values.join(',')}
-            defaultValue={spec.values.join(', ')}
-            onBlur={e => {
-              const vals = e.target.value
-                .split(',')
-                .map(v => parseFloat(v.trim()))
-                .filter(v => !isNaN(v))
-              if (vals.length > 0) onChange({ kind: 'list', values: vals })
-            }}
-          />
-        </label>
+        <div>
+          <label>
+            {`Values — comma-separated (${n} for ${n} step${n !== 1 ? 's' : ''})`}
+            <input
+              type="text"
+              key={spec.values.join(',')}
+              defaultValue={spec.values.join(', ')}
+              onBlur={e => {
+                const vals = e.target.value
+                  .split(',')
+                  .map(v => parseFloat(v.trim()))
+                  .filter(v => !isNaN(v))
+                if (vals.length > 0) onChange({ kind: 'list', values: vals })
+              }}
+            />
+          </label>
+          {spec.values.length !== n && (
+            <button
+              className="btn-fix-list"
+              onClick={() => {
+                const low  = Math.min(...spec.values)
+                const high = Math.max(...spec.values)
+                const vals = Array.from({ length: n }, (_, i) => {
+                  const t = n === 1 ? 0 : i / (n - 1)
+                  return Math.round((low + (high - low) * t) * 1000) / 1000
+                })
+                onChange({ kind: 'list', values: vals })
+              }}
+            >
+              Fix — expand to {n} values
+            </button>
+          )}
+          {unit && unitOptions && onUnitChange && (
+            <label className="field-inline-unit">
+              Unit
+              <UnitSelect value={unit} options={unitOptions} onChange={onUnitChange} />
+            </label>
+          )}
+        </div>
       )}
     </div>
   )
@@ -131,6 +186,9 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
   const { doc, updateAxis } = useStore()
   const n = ax === 'x' ? doc.plate.cols : doc.plate.rows
   const set = (patch: Partial<ReagentAxis>) => updateAxis(ax, { ...def, ...patch })
+
+  const targetUnitOptions = unitsInFamily(def.unit)
+  const targetUnit = def.targetUnit ?? def.unit
 
   return (
     <div className="axis-card">
@@ -144,6 +202,8 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
           name: c.name,
           stockConc: c.stock.value,
           unit: c.stock.unit as ConcUnit,
+          targetUnit: c.stock.unit as ConcUnit,
+          values: { kind: 'range', low: c.stock.value * 0.1, high: c.stock.value * 0.5 },
         })}
       />
 
@@ -158,22 +218,52 @@ function ReagentCard({ ax, def }: { ax: 'x' | 'y'; def: ReagentAxis }) {
         </label>
         <label>
           Unit
-          <UnitSelect value={def.unit} onChange={u => set({ unit: u })} />
+          <UnitSelect
+            value={def.unit}
+            onChange={u => {
+              // Reset targetUnit when stock family changes
+              const newFamily = unitsInFamily(u)
+              const tUnit = newFamily.some(o => o.value === targetUnit) ? targetUnit : u
+              set({ unit: u, targetUnit: tUnit })
+            }}
+          />
         </label>
       </div>
 
       <div className="field-group-label">
         Target concentrations ({n} {ax === 'x' ? 'column' : 'row'}{n !== 1 ? 's' : ''})
       </div>
-      <ValueSpecInput spec={def.values} n={n} onChange={vs => set({ values: vs })} />
+      <ValueSpecInput
+        spec={def.values}
+        n={n}
+        onChange={vs => set({ values: vs })}
+        unit={targetUnit}
+        unitOptions={targetUnitOptions}
+        onUnitChange={u => set({ targetUnit: u })}
+      />
     </div>
   )
+}
+
+const PH_EFFECTIVE_RANGE = 1.5
+
+function phDistToNearestPKa(ph: number, pKas: number[]): number {
+  return Math.min(...pKas.map(pka => Math.abs(pka - ph)))
 }
 
 function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
   const { doc, updateAxis } = useStore()
   const n = ax === 'x' ? doc.plate.cols : doc.plate.rows
   const set = (patch: Partial<PhAxis>) => updateAxis(ax, { ...def, ...patch })
+
+  // Use all pKas from the matched compound (if any), falling back to the single def.pKa
+  const compound = ALL_COMPOUNDS.find(c => c.name === def.bufferName)
+  const allPKas = (compound?.pKa && compound.pKa.length > 0) ? compound.pKa : [def.pKa]
+
+  const phLow  = def.pH.kind === 'range' ? def.pH.low  : Math.min(...def.pH.values)
+  const phHigh = def.pH.kind === 'range' ? def.pH.high : Math.max(...def.pH.values)
+  const lowWarn  = phDistToNearestPKa(phLow,  allPKas) > PH_EFFECTIVE_RANGE
+  const highWarn = phDistToNearestPKa(phHigh, allPKas) > PH_EFFECTIVE_RANGE
 
   return (
     <div className="axis-card">
@@ -204,21 +294,6 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
 
       <div className="field-row">
         <label>
-          Final conc
-          <input
-            type="number" min={0}
-            value={def.concentration}
-            onChange={e => { const v = parseFloat(e.target.value); if (v > 0) set({ concentration: v }) }}
-          />
-        </label>
-        <label>
-          Unit
-          <UnitSelect value={def.concUnit} options={MOLAR_UNITS} onChange={u => set({ concUnit: u })} />
-        </label>
-      </div>
-
-      <div className="field-row">
-        <label>
           Stock conc
           <input
             type="number" min={0}
@@ -229,6 +304,21 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
         <label>
           Unit
           <UnitSelect value={def.stockUnit} options={MOLAR_UNITS} onChange={u => set({ stockUnit: u })} />
+        </label>
+      </div>
+
+      <div className="field-row">
+        <label>
+          Final conc
+          <input
+            type="number" min={0}
+            value={def.concentration}
+            onChange={e => { const v = parseFloat(e.target.value); if (v > 0) set({ concentration: v }) }}
+          />
+        </label>
+        <label>
+          Unit
+          <UnitSelect value={def.concUnit} options={MOLAR_UNITS} onChange={u => set({ concUnit: u })} />
         </label>
       </div>
 
@@ -244,7 +334,32 @@ function PhCard({ ax, def }: { ax: 'x' | 'y'; def: PhAxis }) {
       <div className="field-group-label">
         pH values ({n} {ax === 'x' ? 'column' : 'row'}{n !== 1 ? 's' : ''})
       </div>
-      <ValueSpecInput spec={def.pH} n={n} onChange={vs => set({ pH: vs })} />
+      <ValueSpecInput
+        spec={def.pH}
+        n={n}
+        fieldWarnings={def.pH.kind === 'range' ? { low: lowWarn, high: highWarn } : undefined}
+        onChange={vs => {
+          const patch: Partial<PhAxis> = { pH: vs }
+          const matched = ALL_COMPOUNDS.find(c => c.name === def.bufferName)
+          if (matched?.pKa && matched.pKa.length > 1) {
+            const pHmid = vs.kind === 'range'
+              ? (vs.low + vs.high) / 2
+              : vs.values.length > 0
+                ? (Math.min(...vs.values) + Math.max(...vs.values)) / 2
+                : 7.0
+            patch.pKa = nearestPKa(matched.pKa, pHmid)
+          }
+          set(patch)
+        }}
+      />
+      {(lowWarn || highWarn) && (
+        <p className="ph-range-warn">
+          {lowWarn && highWarn
+            ? 'Both endpoints are'
+            : lowWarn ? 'Low pH is' : 'High pH is'}{' '}
+          more than {PH_EFFECTIVE_RANGE} units from the nearest pKa ({allPKas.map(p => p.toFixed(2)).join(' / ')}); the buffer may be ineffective here.
+        </p>
+      )}
 
       <label>
         Preparation mode

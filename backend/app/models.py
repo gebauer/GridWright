@@ -28,6 +28,7 @@ class ReagentAxis(BaseModel):
     name: str
     stockConc: float
     unit: ConcUnit
+    targetUnit: Optional[ConcUnit] = None
     values: ValueSpec
 
 
@@ -50,6 +51,7 @@ class ConstantAdditive(BaseModel):
     name: str
     stockConc: float
     unit: ConcUnit
+    targetUnit: Optional[ConcUnit] = None
     targetConc: float
 
 

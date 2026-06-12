@@ -21,7 +21,7 @@ const DEFAULT_REAGENT: ReagentAxis = {
   name: '',
   stockConc: 100,
   unit: 'mM',
-  values: { kind: 'range', low: 10, high: 100 },
+  values: { kind: 'range', low: 10, high: 50 }, // 10–50% of stock
 }
 
 const DEFAULT_PH: PhAxis = {
@@ -75,7 +75,8 @@ export const useStore = create<AppStore>(set => ({
   })),
 
   addConstant: () => set(s => {
-    const c: ConstantAdditive = { name: '', stockConc: 100, unit: 'mM', targetConc: 10 }
+    // Default: 100 mM stock → 1 mM final (1/100, mM preselected for molar)
+    const c: ConstantAdditive = { name: '', stockConc: 100, unit: 'mM', targetUnit: 'mM', targetConc: 1 }
     return { doc: { ...s.doc, constants: [...s.doc.constants, c] } }
   }),
 
