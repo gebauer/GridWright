@@ -10,14 +10,8 @@ RUN npm run build
 FROM python:3.12-slim
 WORKDIR /app
 
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_CACHE_DIR=/tmp/poetry-cache
-
-RUN pip install --no-cache-dir poetry==2.2.1
-
-COPY backend/pyproject.toml backend/poetry.lock ./
-RUN poetry install --only main --no-root && rm -rf $POETRY_CACHE_DIR
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
