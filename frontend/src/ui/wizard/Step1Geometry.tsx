@@ -1,5 +1,11 @@
 import { useStore } from '../../state'
 
+const PLATE_PRESETS = [
+  { label: '24-well',  rows: 4, cols: 6  },
+  { label: '48-well',  rows: 6, cols: 8  },
+  { label: '96-well',  rows: 8, cols: 12 },
+]
+
 export default function Step1Geometry() {
   const { doc, updatePlate, updateMeta, setAxisType } = useStore()
   const { plate, meta, axes } = doc
@@ -11,6 +17,20 @@ export default function Step1Geometry() {
     <div className="wizard-step">
       <section className="ws">
         <h3>Plate</h3>
+        <div className="preset-row">
+          {PLATE_PRESETS.map(p => {
+            const active = plate.rows === p.rows && plate.cols === p.cols
+            return (
+              <button
+                key={p.label}
+                className={`btn-preset${active ? ' active' : ''}`}
+                onClick={() => updatePlate({ rows: p.rows, cols: p.cols })}
+              >
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
         <div className="field-row">
           <label>
             Rows

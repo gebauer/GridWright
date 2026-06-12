@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { expandValues } from '../engine/expand'
 import { formatAxisHeader } from './formatters'
 import type { AxisDef, GridResult, ScreenDocument, WellRecipe } from '../engine'
+import { isAxisReady } from '../engine'
 
 interface Props {
   doc: ScreenDocument
@@ -10,12 +11,6 @@ interface Props {
   selectedWell: WellRecipe | null
   onWellClick: (well: WellRecipe) => void
   onColourByChange: (key: string) => void
-}
-
-/** Mirrors the engine's isReady — must stay in sync with screen.ts */
-function isAxisReady(ax: AxisDef): ax is NonNullable<AxisDef> {
-  if (!ax) return false
-  return ax.type === 'reagent' ? ax.name.trim() !== '' : ax.bufferName.trim() !== ''
 }
 
 // Slate-50 → Indigo-600

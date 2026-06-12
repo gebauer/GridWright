@@ -1,4 +1,4 @@
-export { computeGrid } from './screen'
+export { computeGrid, isAxisReady } from './screen'
 export type {
   ScreenDocument,
   GridResult,

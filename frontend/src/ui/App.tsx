@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { computeGrid } from '../engine'
+import { computeGrid, isAxisReady } from '../engine'
 import type { WellRecipe } from '../engine'
 import { useStore } from '../state'
 import { saveScreen, loadScreen } from '../api/client'
@@ -10,21 +10,40 @@ import Step1Geometry from './wizard/Step1Geometry'
 import Step2Axes from './wizard/Step2Axes'
 import Step3Constants from './wizard/Step3Constants'
 import PrintWorksheet from './PrintWorksheet'
+import HelpModal from './HelpModal'
 import { downloadRecipeCSV, downloadPrepCSV } from './exports'
 import './App.css'
 
 const STEPS = ['Geometry', 'Axes', 'Constants'] as const
+
+const DRAFT_KEY = 'gridwright-draft'
 
 export default function App() {
   const { doc, step, setStep, reset, loadDoc } = useStore()
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null)
   const [colourBy, setColourBy] = useState('x')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle')
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [showHelp, setShowHelp] = useState(false)
   // True while we're fetching a /s/{slug} URL on first load — prevents flash of empty INIT state
   const [loadingSlug, setLoadingSlug] = useState(() =>
     /^\/s\/[^/]+$/.test(window.location.pathname),
   )
+
+  // Restore draft from localStorage on first load (only when not loading a slug)
+  useEffect(() => {
+    if (/^\/s\/[^/]+$/.test(window.location.pathname)) return
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) loadDoc(JSON.parse(raw))
+    } catch { /* ignore corrupt drafts */ }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Autosave draft to localStorage whenever doc changes
+  useEffect(() => {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(doc)) } catch { /* quota */ }
+  }, [doc])
 
   // On mount: if URL is /s/{slug}, load that screen from the API
   useEffect(() => {
@@ -48,9 +67,19 @@ export default function App() {
     setSelectedLabel(null)
     setColourBy('x')
     setSaveStatus('idle')
+    setCopyStatus('idle')
     setLoadError(null)
+    localStorage.removeItem(DRAFT_KEY)
     history.pushState(null, '', '/')
   }
+
+  async function handleCopyLink() {
+    await navigator.clipboard.writeText(window.location.href)
+    setCopyStatus('copied')
+    setTimeout(() => setCopyStatus('idle'), 1800)
+  }
+
+  const hasSlug = /^\/s\/[^/]+$/.test(window.location.pathname)
 
   async function handleSave() {
     setSaveStatus('saving')
@@ -93,10 +122,20 @@ export default function App() {
           </span>
         )}
         <div className="header-actions">
+          <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Help">?</button>
+          {hasSlug && (
+            <button
+              className={`btn-copy-link${copyStatus === 'copied' ? ' btn-copy-link--copied' : ''}`}
+              onClick={handleCopyLink}
+            >
+              {copyStatus === 'copied' ? 'Copied ✓' : 'Copy link'}
+            </button>
+          )}
           <button
             className={`btn-save btn-save--${saveStatus}`}
             onClick={handleSave}
-            disabled={saveStatus === 'saving'}
+            disabled={saveStatus === 'saving' || (!isAxisReady(doc.axes.x) && !isAxisReady(doc.axes.y))}
+            title={(!isAxisReady(doc.axes.x) && !isAxisReady(doc.axes.y)) ? 'Define at least one axis before saving' : undefined}
           >
             {saveStatus === 'saving' ? 'Saving…'
               : saveStatus === 'saved'  ? 'Saved ✓'
@@ -207,6 +246,8 @@ export default function App() {
           {result && <PrintWorksheet doc={doc} result={result} />}
         </div>
       )}
+
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </div>
   )
 }

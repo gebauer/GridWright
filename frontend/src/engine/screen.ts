@@ -9,7 +9,7 @@ const DEFAULTS = {
 }
 
 /** An axis is "ready" only once the user has given it a name. */
-function isReady(ax: ScreenDocument['axes']['x']): ax is NonNullable<typeof ax> {
+export function isAxisReady(ax: ScreenDocument['axes']['x']): ax is NonNullable<typeof ax> {
   if (!ax) return false
   return ax.type === 'reagent' ? ax.name.trim() !== '' : ax.bufferName.trim() !== ''
 }
@@ -19,8 +19,8 @@ export function computeGrid(doc: ScreenDocument): GridResult {
   const config = doc.config ?? {}
   // Treat unnamed axes as absent so the preview stays neutral until the user configures them.
   const axes = {
-    x: isReady(doc.axes.x) ? doc.axes.x : null,
-    y: isReady(doc.axes.y) ? doc.axes.y : null,
+    x: isAxisReady(doc.axes.x) ? doc.axes.x : null,
+    y: isAxisReady(doc.axes.y) ? doc.axes.y : null,
   }
   const cfg = {
     minPipetteVolumeUL:   config.minPipetteVolumeUL   ?? DEFAULTS.minPipetteVolumeUL,
