@@ -10,3 +10,4 @@ data/
 # misc
 .DS_Store
 *.pyc
+backend/gridwright.db
