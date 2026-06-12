@@ -120,11 +120,13 @@ function buildPrepList(
     meta.set(c.name, { conc: `${c.stockConc} ${c.unit}` })
   }
 
-  return Array.from(totals.entries()).map(([name, sumUL]) => ({
-    name,
-    conc: meta.get(name)?.conc ?? '',
-    volumeUL: sumUL * deadVolMultiplier,
-  }))
+  return Array.from(totals.entries())
+    .map(([name, sumUL]) => ({
+      name,
+      conc: meta.get(name)?.conc ?? '',
+      volumeUL: sumUL * deadVolMultiplier,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 function registerPhStockMeta(

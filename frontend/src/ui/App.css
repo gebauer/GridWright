@@ -18,11 +18,25 @@
   flex-shrink: 0;
 }
 
+.app-logo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.1;
+}
+
 .app-logo {
   font-size: 1.1rem;
   font-weight: 800;
   color: #4f46e5;
   letter-spacing: -0.03em;
+}
+
+.app-tagline {
+  font-size: 0.62rem;
+  font-weight: 400;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
 }
 
 .screen-meta {
@@ -69,6 +83,19 @@
 }
 .btn-copy-link:hover { background: #eef2ff; }
 .btn-copy-link--copied { border-color: #bbf7d0; color: #16a34a; }
+
+.btn-local {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-local:hover { background: #f8fafc; border-color: #cbd5e1; }
 
 .btn-new-screen {
   background: none;
@@ -336,6 +363,29 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+/* ── Preview footer ──────────────────────────────────────────── */
+
+.preview-footer {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.preview-footer a {
+  color: #94a3b8;
+  text-decoration: none;
+}
+
+.preview-footer a:hover {
+  color: #4f46e5;
+  text-decoration: underline;
 }
 
 /* ── Wizard nav / layout ─────────────────────────────────────── */

@@ -11,10 +11,14 @@ import Step2Axes from './wizard/Step2Axes'
 import Step3Constants from './wizard/Step3Constants'
 import PrintWorksheet from './PrintWorksheet'
 import HelpModal from './HelpModal'
-import { downloadRecipeCSV, downloadPrepCSV } from './exports'
+import { downloadRecipeCSV, downloadPrepCSV, saveLocalJSON, loadLocalJSON } from './exports'
 import './App.css'
 
 const STEPS = ['Geometry', 'Axes', 'Constants'] as const
+
+const VERSION = 'v.2.1'
+const VERSION_DATE = '2026-06-12'
+const GITHUB_URL = 'https://github.com/jangebauer/GridWright'
 
 const DRAFT_KEY = 'gridwright-draft'
 
@@ -26,6 +30,29 @@ export default function App() {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle')
   const [loadError, setLoadError] = useState<string | null>(null)
   const [showHelp, setShowHelp] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+
+  async function handleImport() {
+    try {
+      const doc = await loadLocalJSON()
+      loadDoc(doc)
+      setSelectedLabel(null)
+      setColourBy('x')
+      history.pushState(null, '', '/')
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Could not read file')
+      setTimeout(() => setImportError(null), 4000)
+    }
+  }
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const up   = () => setIsOnline(true)
+    const down = () => setIsOnline(false)
+    window.addEventListener('online',  up)
+    window.addEventListener('offline', down)
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
+  }, [])
   // True while we're fetching a /s/{slug} URL on first load — prevents flash of empty INIT state
   const [loadingSlug, setLoadingSlug] = useState(() =>
     /^\/s\/[^/]+$/.test(window.location.pathname),
@@ -114,7 +141,10 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <span className="app-logo">GridWright</span>
+        <div className="app-logo-block">
+          <span className="app-logo">GridWright</span>
+          <span className="app-tagline">From hit to optimized tray</span>
+        </div>
         {doc.meta.name && (
           <span className="screen-meta">
             {doc.meta.name}
@@ -123,6 +153,8 @@ export default function App() {
         )}
         <div className="header-actions">
           <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Help">?</button>
+          <button className="btn-local" onClick={() => saveLocalJSON(doc)} title="Download screen as JSON file">⬇ Download</button>
+          <button className="btn-local" onClick={handleImport} title="Upload a saved .gridwright.json file">⬆ Upload</button>
           {hasSlug && (
             <button
               className={`btn-copy-link${copyStatus === 'copied' ? ' btn-copy-link--copied' : ''}`}
@@ -134,17 +166,28 @@ export default function App() {
           <button
             className={`btn-save btn-save--${saveStatus}`}
             onClick={handleSave}
-            disabled={saveStatus === 'saving' || (!isAxisReady(doc.axes.x) && !isAxisReady(doc.axes.y))}
-            title={(!isAxisReady(doc.axes.x) && !isAxisReady(doc.axes.y)) ? 'Define at least one axis before saving' : undefined}
+            disabled={!isOnline || saveStatus === 'saving' || (!isAxisReady(doc.axes.x) && !isAxisReady(doc.axes.y))}
+            title={
+              !isOnline ? 'Offline — save unavailable'
+              : (!isAxisReady(doc.axes.x) && !isAxisReady(doc.axes.y)) ? 'Define at least one axis before saving'
+              : undefined
+            }
           >
-            {saveStatus === 'saving' ? 'Saving…'
+            {!isOnline ? 'Offline'
+              : saveStatus === 'saving' ? 'Saving…'
               : saveStatus === 'saved'  ? 'Saved ✓'
               : saveStatus === 'error'  ? 'Save failed'
-              : 'Save & share'}
+              : '☁ Save & share'}
           </button>
           <button className="btn-new-screen" onClick={handleReset}>New screen</button>
         </div>
       </header>
+
+      {importError && (
+        <div className="load-error">
+          Import failed: {importError}
+        </div>
+      )}
 
       {loadError && (
         <div className="load-error">
@@ -244,6 +287,11 @@ export default function App() {
 
           {/* Print-only — hidden on screen, rendered in window.print() */}
           {result && <PrintWorksheet doc={doc} result={result} />}
+
+          <footer className="preview-footer">
+            <span>{VERSION} · {VERSION_DATE}</span>
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
+          </footer>
         </div>
       )}
 

@@ -10,14 +10,43 @@ function csvRow(...cells: (string | number)[]): string {
   return cells.map(c => esc(String(c))).join(',')
 }
 
-function triggerDownload(filename: string, content: string) {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+function triggerDownload(filename: string, content: string, mime = 'text/csv;charset=utf-8;') {
+  const blob = new Blob([content], { type: mime })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   a.href     = url
   a.download = filename
   a.click()
   URL.revokeObjectURL(url)
+}
+
+export function saveLocalJSON(doc: ScreenDocument) {
+  const name = doc.meta.name?.trim().replace(/\s+/g, '_') || 'screen'
+  triggerDownload(`${name}.gridwright.json`, JSON.stringify(doc, null, 2), 'application/json')
+}
+
+export function loadLocalJSON(): Promise<ScreenDocument> {
+  return new Promise((resolve, reject) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json,.gridwright.json'
+    input.onchange = () => {
+      const file = input.files?.[0]
+      if (!file) return reject(new Error('No file selected'))
+      const reader = new FileReader()
+      reader.onload = e => {
+        try {
+          const doc = JSON.parse(e.target?.result as string) as ScreenDocument
+          if (doc.version !== 1) throw new Error('Unrecognised file format')
+          resolve(doc)
+        } catch (err) {
+          reject(err)
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  })
 }
 
 function roundVol(uL: number): number {
