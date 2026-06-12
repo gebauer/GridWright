@@ -16,7 +16,7 @@ import './App.css'
 
 const STEPS = ['Geometry', 'Axes', 'Constants'] as const
 
-const VERSION = 'v.2.1'
+const VERSION = 'v.2.2'
 const VERSION_DATE = '2026-06-12'
 const GITHUB_URL = 'https://github.com/jangebauer/GridWright'
 
