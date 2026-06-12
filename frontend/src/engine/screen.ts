@@ -52,6 +52,9 @@ export function computeGrid(doc: ScreenDocument): GridResult {
     ? expandValues(axes.y.type === 'reagent' ? axes.y.values : axes.y.pH, plate.rows)
     : null
 
+  const rowOffset = plate.rowOffset ?? 0
+  const colOffset = plate.colOffset ?? 0
+
   const wells = []
   for (let r = 0; r < plate.rows; r++) {
     for (let c = 0; c < plate.cols; c++) {
@@ -62,6 +65,8 @@ export function computeGrid(doc: ScreenDocument): GridResult {
         constants,
         wellVolumeUL,
         cfg,
+        rowOffset,
+        colOffset,
       ))
     }
   }

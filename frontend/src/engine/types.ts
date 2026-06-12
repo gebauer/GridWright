@@ -47,6 +47,8 @@ export interface PlateSpec {
   cols: number
   wellVolume: number
   volumeUnit: 'uL' | 'mL'
+  rowOffset?: number  // 0-based row index of the first well (default 0 = row A)
+  colOffset?: number  // 0-based col index of the first well (default 0 = column 1)
 }
 
 export interface ScreenMeta {

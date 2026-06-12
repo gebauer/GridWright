@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useStore } from '../../state'
 
 const PLATE_PRESETS = [
@@ -6,9 +7,31 @@ const PLATE_PRESETS = [
   { label: '96-well',  rows: 8, cols: 12 },
 ]
 
+function parseWellLabel(s: string): { rowOffset: number; colOffset: number } | null {
+  const m = s.trim().toUpperCase().match(/^([A-Z]+)(\d+)$/)
+  if (!m) return null
+  // Multi-letter rows: A=0, B=1, … Z=25, AA=26, …
+  let rowOffset = 0
+  for (const ch of m[1]) rowOffset = rowOffset * 26 + (ch.charCodeAt(0) - 65)
+  const colOffset = parseInt(m[2], 10) - 1
+  if (colOffset < 0) return null
+  return { rowOffset, colOffset }
+}
+
+function offsetToLabel(rowOffset: number, colOffset: number): string {
+  return String.fromCharCode(65 + rowOffset) + String(colOffset + 1)
+}
+
 export default function Step1Geometry() {
   const { doc, updatePlate, updateMeta, setAxisType } = useStore()
   const { plate, meta, axes } = doc
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [wellInput, setWellInput] = useState<string>(() =>
+    (plate.rowOffset || plate.colOffset)
+      ? offsetToLabel(plate.rowOffset ?? 0, plate.colOffset ?? 0)
+      : ''
+  )
+  const [wellInputError, setWellInputError] = useState(false)
 
   const axisType = (def: typeof axes.x) =>
     def === null ? 'none' : def.type
@@ -69,6 +92,42 @@ export default function Step1Geometry() {
             </select>
           </label>
         </div>
+        <details
+          className="advanced-options"
+          open={advancedOpen}
+          onToggle={e => setAdvancedOpen((e.target as HTMLDetailsElement).open)}
+        >
+          <summary>Advanced options</summary>
+          <label>
+            Starting well
+            <input
+              type="text"
+              placeholder="A1"
+              value={wellInput}
+              className={wellInputError ? 'input-ph-warn' : undefined}
+              onChange={e => {
+                const raw = e.target.value
+                setWellInput(raw)
+                if (raw === '' || raw === 'A1') {
+                  setWellInputError(false)
+                  updatePlate({ rowOffset: 0, colOffset: 0 })
+                  return
+                }
+                const parsed = parseWellLabel(raw)
+                if (parsed) {
+                  setWellInputError(false)
+                  updatePlate(parsed)
+                } else {
+                  setWellInputError(true)
+                }
+              }}
+            />
+          </label>
+          <p className="field-hint">
+            Use when designing a partial plate — e.g. "C3" makes the top-left well of this grid
+            appear as C3 in labels, CSVs, and the print worksheet.
+          </p>
+        </details>
       </section>
 
       <section className="ws">

@@ -60,6 +60,8 @@ class PlateSpec(BaseModel):
     cols: int
     wellVolume: float
     volumeUnit: Literal['uL', 'mL']
+    rowOffset: Optional[int] = None
+    colOffset: Optional[int] = None
 
 
 class ScreenMeta(BaseModel):

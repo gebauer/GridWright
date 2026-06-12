@@ -441,6 +441,46 @@
   margin-bottom: 0;
 }
 
+.advanced-options {
+  margin-top: 0.75rem;
+}
+
+.advanced-options summary {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.advanced-options summary::before {
+  content: '▸';
+  font-size: 0.65rem;
+  transition: transform 0.15s;
+}
+
+.advanced-options[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.advanced-options summary:hover { color: #64748b; }
+
+.advanced-options > label,
+.advanced-options > p {
+  margin-top: 0.6rem;
+}
+
+.field-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0.3rem 0 0;
+}
+
 .ws h3 {
   margin: 0 0 0.6rem;
   font-size: 0.68rem;

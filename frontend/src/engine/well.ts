@@ -26,8 +26,10 @@ export function computeWell(
   constants: ConstantAdditive[],
   wellVolumeUL: number,
   cfg: EngineConfig,
+  rowOffset = 0,
+  colOffset = 0,
 ): WellRecipe {
-  const label = String.fromCharCode(65 + row) + String(col + 1)
+  const label = String.fromCharCode(65 + row + rowOffset) + String(col + colOffset + 1)
   const warnings: Warning[] = []
   const components: { name: string; volumeUL: number }[] = []
   const axisValues: { x?: number; y?: number } = {}
